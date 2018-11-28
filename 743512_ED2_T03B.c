@@ -5,8 +5,8 @@
  *
  * Trabalho 03A - Hashing com encadeamento
  *
- * RA: 
- * Aluno: 
+ * RA: 743512
+ * Aluno: Bianca Gomes Rodrigues
  * ========================================================================== */
 
 /* Bibliotecas */
@@ -87,13 +87,11 @@ int nregistros;
 /* Recebe do usuário uma string simulando o arquivo completo. */
 void carregar_arquivo();
 
-
 /* Exibe o Produto */
 int exibir_registro(int rrn);
 
 /*Função de Hash*/
 short hash(const char* chave, int tam);
-
 
 /*Auxiliar para a função de hash*/
 short f(char x);
@@ -110,14 +108,20 @@ int  remover(Hashtable* tabela);
 void liberar_tabela(Hashtable* tabela);
 
 /* <<< DECLARE AQUI OS PROTOTIPOS >>> */
+void imprimir_tabela(Hashtable tabela);
 
+Produto Recuperar_Registro(int RRN);
+
+void gerarChave(Produto * Novo);
+
+/*Cria e inicializa a TABELA com o TAMANHO inserido pelo usuário*/
+void Criar_Tabela(Hashtable *Tabela, int Tamanho);
 
 /* ==========================================================================
  * ============================ FUNÇÃO PRINCIPAL ============================
  * =============================== NÃO ALTERAR ============================== */
 
-int main() 
-{
+int main() {
 	
 	/* Arquivo */
 	int carregarArquivo = 0;
@@ -131,12 +135,10 @@ int main()
 	tam = prox_primo(tam);
 
 	Hashtable tabela;
-	criar_tabela(&tabela, tam);
-	if (carregarArquivo) 
-		carregar_tabela(&tabela);
+	Criar_Tabela(&tabela, tam);
+	// if (carregarArquivo) 
+	// 	carregar_tabela(&tabela);
 	
-
-
 	/* Execução do programa */
 	int opcao = 0;
 	while(opcao != 6) {
@@ -148,25 +150,25 @@ int main()
 			break;
 		case 2:
 			printf(INICIO_ALTERACAO);
-			if(alterar(tabela))
-				printf(SUCESSO);
-			else
-				printf(FALHA);
+			// if(alterar(tabela))
+			// 	printf(SUCESSO);
+			// else
+			// 	printf(FALHA);
 			break;
 		case 3:
 			printf(INICIO_BUSCA);
-			buscar(tabela);
+			// buscar(tabela);
 			break;
 		case 4:
 			printf(INICIO_EXCLUSAO);
-			printf("%s", (remover(&tabela)) ? SUCESSO : FALHA );
+			// printf("%s", (remover(&tabela)) ? SUCESSO : FALHA );
 			break;
 		case 5:
 			printf(INICIO_LISTAGEM);
 			imprimir_tabela(tabela);
 			break;
 		case 6:
-			liberar_tabela(&tabela);
+			// liberar_tabela(&tabela);
 			break;
 
 		case 10:
@@ -191,19 +193,95 @@ void carregar_arquivo() {
 }
 
 /*Auxiliar para a função de hash*/
-short f(char x)
-{
+short f(char x){
 	return (x < 59) ? x - 48 : x - 54; 
 }
 
+/* ----------------------------------------*/
+
+/*Função de Hash*/
+short hash(const char* chave, int tam){
+	
+	//Função Hash
+	int h = 0;
+	for(int i= 1; i <= 8; i++)
+		h+= i*(f(chave[i-1]));
+
+	// printf("H %d - Tamanho %d\n", h, tam);
+	// printf("H%Tamanho %d\n", h%tam);
+	return (h%tam);
+}
+
+int  prox_primo(int a){
+
+	int Contador = 0;
+	for(int i=1; i <= a; i++){
+		if(a%i == 0)
+			Contador++;
+	}
+	if(Contador == 2)
+		return a;
+
+	else{
+		int flag = 0;
+		while(flag == 0){			
+			Contador = 0;
+			a++;
+			
+			for(int j=1; j <= a; j++){
+				if(a%j == 0)
+					Contador++;
+			}
+			if(Contador == 2){
+				flag = 1;
+				return a;
+			}	
+		}				
+	}
+}
+
+/*Cria e inicializa a TABELA com o TAMANHO inserido pelo usuário*/
+void Criar_Tabela(Hashtable *Tabela, int Tamanho){
+	
+    Tabela->tam = Tamanho;
+	Tabela->v = (Chave**)malloc(Tamanho*sizeof(Chave));
+	
+}
+
+Produto Recuperar_Registro(int RRN){
+	
+	char Registro[193], *p;
+	strncpy(Registro, ARQUIVO + ((RRN)*192), 192);
+	Registro[192] = '\0';
+
+	Produto A;
+	p = strtok(Registro,"@");
+	strcpy(A.pk,p);
+	p = strtok(NULL,"@");
+	strcpy(A.nome,p);
+	p = strtok(NULL,"@");
+	strcpy(A.marca,p);
+	p = strtok(NULL,"@");
+	strcpy(A.data,p);
+	p = strtok(NULL,"@");
+	strcpy(A.ano,p);
+	p = strtok(NULL,"@");
+	strcpy(A.preco,p);
+	p = strtok(NULL,"@");
+	strcpy(A.desconto,p);
+	p = strtok(NULL,"@");
+	strcpy(A.categoria,p);
+
+	return A;
+}
+
 /* Exibe o Produto */
-int exibir_registro(int rrn)
-{
+int exibir_registro(int rrn){
 	if(rrn<0)
 		return 0;
 	float preco;
 	int desconto;
-	Produto j = recuperar_registro(rrn);
+	Produto j = Recuperar_Registro(rrn);
   char *cat, categorias[TAM_CATEGORIA];
 	printf("%s\n", j.pk);
 	printf("%s\n", j.nome);
@@ -215,9 +293,204 @@ int exibir_registro(int rrn)
 	preco = preco *  (100-desconto);
 	preco = ((int) preco)/ (float) 100 ;
 	printf("%07.2f\n",  preco);
+	//strncpy(categorias, j.categoria, strlen(j.categoria));
+    // for (cat = strtok (categorias, "|"); cat != NULL; cat = strtok (NULL, "|"))
+    // printf("%s ", cat);
+
 	strcpy(categorias, j.categoria);
-    for (cat = strtok (categorias, "|"); cat != NULL; cat = strtok (NULL, "|"))
-    printf("%s ", cat);
+
+	cat = strtok (categorias, "|");
+
+	while(cat != NULL){
+		printf("%s", cat);
+		cat = strtok (NULL, "|");
+		if(cat != NULL)
+			printf(" ");
+	}
 	printf("\n");
-	return 1;
+	
+    return 1;
+}
+
+void gerarChave(Produto * Novo){
+
+	Novo->pk[0] = Novo->nome[0];
+	Novo->pk[1] = Novo->nome[1];
+	Novo->pk[2] = Novo->marca[0];
+	Novo->pk[3] = Novo->marca[1];
+	Novo->pk[4] = Novo->data[0];
+	Novo->pk[5] = Novo->data[1];
+	Novo->pk[6] = Novo->data[3];
+	Novo->pk[7] = Novo->data[4];
+	Novo->pk[8] = Novo->ano[0];
+	Novo->pk[9] = Novo->ano[1]; 
+	Novo->pk[10] = '\0';
+
+}
+
+void cadastrar(Hashtable* tabela){
+	//Código - NÃO é inserido pelo usuário 
+	// char pk[TAM_PRIMARY_KEY];
+	// gerarChave(novo);
+
+	/*-----------------------*/
+
+	/* Interação com o Usuário */
+	Produto Novo;
+	/* CAMPOS DE TAMANHO VARIÁVEL */
+	
+	//Nome do Produto ou Modelo
+	// char Nome[TAM_NOME];
+	scanf("%[^\n]s", Novo.nome);
+	getchar();
+	//Marca
+	// char Marca[TAM_MARCA];
+	scanf("%[^\n]s", Novo.marca);
+	getchar();
+	/*-----------------------*/
+
+	/* CAMPOS DE TAMANHO FIXO */
+
+	//Data de Registro
+	// char Data[TAM_DATA];	/* DD/MM/AAAA */
+	scanf("%[^\n]s", Novo.data);
+	getchar();
+	//Ano de Lançamento
+	// char Ano[TAM_ANO];
+	scanf("%[^\n]s", Novo.ano);
+	getchar();
+	//Preço-Base
+	// char Preço[TAM_PRECO];
+	scanf("%[^\n]s", Novo.preco);
+	getchar();
+	//Desconto
+	// char Desconto[TAM_DESCONTO];
+	scanf("%[^\n]s", Novo.desconto);
+	getchar();
+	//Categorias
+	// char Categoria[TAM_CATEGORIA];
+	scanf("%[^\n]s", Novo.categoria);
+	getchar();
+	/*-----------------------*/
+
+	gerarChave(&Novo);
+
+	//Verifica se o PRODUTO existe
+	//if(Busca(Novo.pk, tabela) > -1) {
+	//	printf(ERRO_PK_REPETIDA, Novo.pk);
+		// return;
+ 	//}
+
+	// else{
+		
+		nregistros++;
+
+		//Registro Auxiliar
+		char rAuxiliar[193]; //TAM_REGISTRO
+		rAuxiliar[192] = '\0';
+
+		sprintf(rAuxiliar, "%s@%s@%s@%s@%s@%s@%s@%s@", Novo.pk, Novo.nome, Novo.marca, Novo.data, Novo.ano, Novo.preco, Novo.desconto, Novo.categoria);
+
+		//Precisamos obter o TAMANHO do REGISTRO AUXILIAR (rAuxiliar) para sabermos quantos "bytes" faltam para preencher totalmento o REGISTRO.
+		int Tamanho = strlen(rAuxiliar);
+
+		/*COMENTAR*/
+		//printf("\nTamanho = %d", Tamanho);
+
+		int i;
+		//Preenchendo o REGISTRO por completo (192bytes)
+		for(i = Tamanho; i < 192; i++)
+			rAuxiliar[i] = '#';
+
+		/*COMENTAR*/
+		//printf("\nTamanho - Final = %d", strlen(rAuxiliar));
+		//printf("\nRegistro: %s\n\n", rAuxiliar);
+
+		strcat(ARQUIVO, rAuxiliar);
+
+		//int tRegistro = strlen(rAuxiliar);
+		//printf("%d\n", tRegistro);
+		
+		//printf("%s\n", rAuxiliar);
+		
+		//printf("%s\n", ARQUIVO);
+		int Posicao = hash(Novo.pk, tabela->tam);
+
+		if(tabela->v[Posicao] == NULL){
+
+			// printf("tabela->v[Posicao] == NULL\n");
+			// printf("Posicao %d\n", Posicao );
+
+			Chave *newNode = (Chave*)malloc(sizeof(Chave));
+			
+			strcpy(newNode->pk, Novo.pk);
+			newNode->rrn = nregistros-1;
+			newNode->prox = NULL;
+
+			tabela->v[Posicao] = newNode;
+
+			printf(REGISTRO_INSERIDO, Novo.pk);
+			return;
+		}
+		else{
+				// printf("Posicao %d\n", Posicao );
+
+				int flag = 0;
+
+				if(flag == 0 && strcmp(tabela->v[Posicao]->pk, Novo.pk) > 0){
+					Chave * New = (Chave*)malloc(sizeof(Chave));
+					strcpy(New->pk,Novo.pk);
+					New->prox = tabela->v[Posicao];
+					tabela->v[Posicao] = New;
+					flag = 1;
+				}
+
+				//else - Não funcionava sempre com o else				
+				/*Monitoria*/
+				Chave * Anterior = NULL; 
+				Chave * Atual = tabela->v[Posicao];
+
+				while (Atual->prox!= NULL && strcmp(Novo.pk, Atual->pk) > 0){
+					Anterior = Atual;
+					Atual = Atual->prox;
+				}
+
+				if(flag == 0 && Anterior != NULL && strcmp(Atual->pk, Novo.pk) > 0){
+					Chave * New = (Chave*)malloc(sizeof(Chave));	
+					strcpy(New->pk,Novo.pk);
+					New->prox = Atual;
+					Anterior->prox = New;
+					flag = 1;
+				}
+				
+				if(flag == 0 && strcmp(Atual->pk, Novo.pk) < 0){
+					Chave * New = (Chave*)malloc(sizeof(Chave));
+					strcpy(New->pk,Novo.pk);
+					Atual->prox = New;
+					New->prox = NULL;
+					flag = 1;
+				}		
+		}
+}
+
+void liberar_tabela(Hashtable* tabela){
+
+
+}
+
+void imprimir_tabela(Hashtable tabela){
+
+	for(int i=0; i<tabela.tam; i++){
+	
+		printf("[%d]", i);
+		
+		Chave *Node = tabela.v[i];
+
+		while(Node != NULL){
+			printf(" %s", Node->pk);
+			Node = Node->prox;
+		} 
+
+		printf("\n");	
+	}
 }
