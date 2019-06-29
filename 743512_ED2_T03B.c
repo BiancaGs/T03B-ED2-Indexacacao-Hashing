@@ -102,7 +102,7 @@ int  prox_primo(int a);
 /*Funções do Menu*/
 void carregar_tabela(Hashtable* tabela);
 void cadastrar(Hashtable* tabela);
-int  alterar(Hashtable tabela);
+int  alterar(Hashtable *tabela);
 void buscar(Hashtable tabela);
 int  remover(Hashtable* tabela);
 void liberar_tabela(Hashtable* tabela);
@@ -116,6 +116,8 @@ void gerarChave(Produto * Novo);
 
 /*Cria e inicializa a TABELA com o TAMANHO inserido pelo usuário*/
 void Criar_Tabela(Hashtable *Tabela, int Tamanho);
+
+int Busca(char pk[], Hashtable *Tabela);
 
 /* ==========================================================================
  * ============================ FUNÇÃO PRINCIPAL ============================
@@ -136,8 +138,8 @@ int main() {
 
 	Hashtable tabela;
 	Criar_Tabela(&tabela, tam);
-	// if (carregarArquivo) 
-	// 	carregar_tabela(&tabela);
+	if (carregarArquivo == 1) 
+		carregar_tabela(&tabela);
 	
 	/* Execução do programa */
 	int opcao = 0;
@@ -150,18 +152,18 @@ int main() {
 			break;
 		case 2:
 			printf(INICIO_ALTERACAO);
-			// if(alterar(tabela))
-			// 	printf(SUCESSO);
-			// else
-			// 	printf(FALHA);
+			if(alterar(&tabela))
+				printf(SUCESSO);
+			else
+				printf(FALHA);
 			break;
 		case 3:
 			printf(INICIO_BUSCA);
-			// buscar(tabela);
+			buscar(tabela);
 			break;
 		case 4:
 			printf(INICIO_EXCLUSAO);
-			// printf("%s", (remover(&tabela)) ? SUCESSO : FALHA );
+			printf("%s", (remover(&tabela)) ? SUCESSO : FALHA );
 			break;
 		case 5:
 			printf(INICIO_LISTAGEM);
@@ -190,6 +192,7 @@ int main() {
 /* Recebe do usuário uma string simulando o arquivo completo. */
 void carregar_arquivo() {
 	scanf("%[^\n]\n", ARQUIVO);
+	nregistros = strlen(ARQUIVO)/TAM_REGISTRO;
 }
 
 /*Auxiliar para a função de hash*/
@@ -246,6 +249,77 @@ void Criar_Tabela(Hashtable *Tabela, int Tamanho){
     Tabela->tam = Tamanho;
 	Tabela->v = (Chave**)malloc(Tamanho*sizeof(Chave));
 	
+}
+void carregar_tabela(Hashtable* tabela){
+
+	// printf("nRegistros %d\n", nregistros);
+	
+	for(int i =0; i<nregistros; i++){
+		
+		int Posicao = hash(Recuperar_Registro(i).pk, tabela->tam);
+
+		if(tabela->v[Posicao] == NULL){
+
+			// printf("tabela->v[Posicao] == NULL\n");
+			// printf("Posicao %d\n", Posicao );
+
+			Chave *newNode = (Chave*)malloc(sizeof(Chave));
+			
+			strcpy(newNode->pk, Recuperar_Registro(i).pk);
+			newNode->rrn = i;
+			newNode->prox = NULL;
+
+			tabela->v[Posicao] = newNode;
+
+			// printf(REGISTRO_INSERIDO, Novo.pk);
+			// return;
+		}
+		else{
+				// printf("Posicao %d\n", Posicao );
+
+				int flag = 0;
+
+				if(flag == 0 && strcmp(tabela->v[Posicao]->pk, Recuperar_Registro(i).pk) > 0){
+					Chave * New = (Chave*)malloc(sizeof(Chave));
+					strcpy(New->pk,Recuperar_Registro(i).pk);
+					New->rrn = i;
+					New->prox = tabela->v[Posicao];
+					tabela->v[Posicao] = New;
+					flag = 1;
+				}
+
+				//else - Não funcionava sempre com o else				
+				/*Monitoria*/
+				Chave * Anterior = NULL; 
+				Chave * Atual = tabela->v[Posicao];
+
+				while (Atual->prox!= NULL && strcmp(Recuperar_Registro(i).pk, Atual->pk) > 0){
+					Anterior = Atual;
+					Atual = Atual->prox;
+				}
+
+				if(flag == 0 && Anterior != NULL && strcmp(Atual->pk, Recuperar_Registro(i).pk) > 0){
+					Chave * New = (Chave*)malloc(sizeof(Chave));	
+					strcpy(New->pk,Recuperar_Registro(i).pk);
+					New->rrn = i;
+					New->prox = Atual;
+					Anterior->prox = New;
+					flag = 1;
+				}
+				
+				if(flag == 0 && strcmp(Atual->pk, Recuperar_Registro(i).pk) < 0){
+					Chave * New = (Chave*)malloc(sizeof(Chave));
+					strcpy(New->pk,Recuperar_Registro(i).pk);
+					New->rrn = i;
+					Atual->prox = New;
+					New->prox = NULL;
+					flag = 1;
+				}
+
+				// if(flag == 1)
+				// 	printf(REGISTRO_INSERIDO, Novo.pk);
+		}
+	}
 }
 
 Produto Recuperar_Registro(int RRN){
@@ -376,10 +450,10 @@ void cadastrar(Hashtable* tabela){
 	gerarChave(&Novo);
 
 	//Verifica se o PRODUTO existe
-	//if(Busca(Novo.pk, tabela) > -1) {
-	//	printf(ERRO_PK_REPETIDA, Novo.pk);
-		// return;
- 	//}
+	if(Busca(Novo.pk, tabela) > -1) {
+		printf(ERRO_PK_REPETIDA, Novo.pk);
+		return;
+ 	}
 
 	// else{
 		
@@ -440,6 +514,7 @@ void cadastrar(Hashtable* tabela){
 				if(flag == 0 && strcmp(tabela->v[Posicao]->pk, Novo.pk) > 0){
 					Chave * New = (Chave*)malloc(sizeof(Chave));
 					strcpy(New->pk,Novo.pk);
+					New->rrn = nregistros-1;
 					New->prox = tabela->v[Posicao];
 					tabela->v[Posicao] = New;
 					flag = 1;
@@ -458,6 +533,7 @@ void cadastrar(Hashtable* tabela){
 				if(flag == 0 && Anterior != NULL && strcmp(Atual->pk, Novo.pk) > 0){
 					Chave * New = (Chave*)malloc(sizeof(Chave));	
 					strcpy(New->pk,Novo.pk);
+					New->rrn = nregistros-1;
 					New->prox = Atual;
 					Anterior->prox = New;
 					flag = 1;
@@ -466,14 +542,194 @@ void cadastrar(Hashtable* tabela){
 				if(flag == 0 && strcmp(Atual->pk, Novo.pk) < 0){
 					Chave * New = (Chave*)malloc(sizeof(Chave));
 					strcpy(New->pk,Novo.pk);
+					New->rrn = nregistros-1;
 					Atual->prox = New;
 					New->prox = NULL;
 					flag = 1;
-				}		
+				}
+
+				if(flag == 1)
+					printf(REGISTRO_INSERIDO, Novo.pk);
 		}
 }
 
+
+int alterar(Hashtable *tabela){
+
+	char PK[TAM_PRIMARY_KEY];
+	memset(PK, '\0', TAM_PRIMARY_KEY);
+
+	scanf("%[^\n]s", PK);
+	getchar();
+
+	if(Busca(PK, tabela) == -1){
+		printf(REGISTRO_N_ENCONTRADO);
+		return 0;
+	}
+
+	else{
+
+		int RRN = Busca(PK, tabela);
+		//printf("%d\n", RRN);
+		
+		//O desconto inserido precisa ser de 3 bytes com valor entre 000 e 100.
+		char Desconto[4];
+		memset(Desconto, '\0', 4);
+
+		int flag = 0;				
+		//getchar();
+		scanf("%[^\n]s", Desconto);
+		getchar();
+
+		if(strcmp(Desconto, "000") >= 0 && strcmp(Desconto, "100") <= 0){ //&& strlen(Desconto) == 3){
+				flag = 1;
+		}
+		while(flag == 0){	
+			printf(CAMPO_INVALIDO);
+			//getchar();	
+			scanf("%[^\n]s", Desconto);
+			getchar();
+			
+			if(strcmp(Desconto, "000") >= 0 && strcmp(Desconto, "100") <= 0){ //&& strlen(Desconto) == 3){
+					flag = 1;
+			}
+		}
+
+		char *Arquivo = ARQUIVO + RRN * 192;
+		// printf("%s\n", Arquivo);
+
+		int Contador = 0;
+		while(Contador < 6){
+			if((*Arquivo) == '@')
+				Contador++;
+			Arquivo++;
+		}
+		//printf("Contador %d\n", Contador);
+		// printf("%s\n", Arquivo);
+
+		
+		for(int i = 0; i < 3; i++){
+			// printf("%c ", *Arquivo);
+			*Arquivo = Desconto[i];
+			Arquivo++;
+		}
+		return 1;
+	}
+}
+
+int Busca(char pk[], Hashtable *tabela){
+
+	int Posicao = hash(pk, tabela->tam);
+
+	Chave *Node = tabela->v[Posicao];
+
+	while(Node != NULL){
+		if(strcmp(Node->pk, pk)==0){
+		//	exibir_registro(tabela->v[Posicao]->pk);
+			return Node->rrn;
+		}
+		Node = Node->prox;
+	}
+	// printf(REGISTRO_N_ENCONTRADO);
+	return -1;
+
+}
+
+void buscar(Hashtable tabela){
+
+	char pk[TAM_PRIMARY_KEY];
+	memset(pk, '\0', TAM_PRIMARY_KEY);
+
+	scanf("%[^\n]s", pk);
+	getchar();
+
+	int Posicao = hash(pk, tabela.tam);
+
+	Chave *Node = tabela.v[Posicao];
+
+	while(Node != NULL){
+		if(strcmp(Node->pk, pk)==0){
+			exibir_registro(Node->rrn);
+			return;
+		}
+		Node = Node->prox;
+	}
+	printf(REGISTRO_N_ENCONTRADO);
+
+}
+
+int remover(Hashtable* tabela){
+
+	char pk[TAM_PRIMARY_KEY];
+	memset(pk, '\0', TAM_PRIMARY_KEY);
+
+	scanf("%[^\n]s", pk);
+	getchar();
+
+
+	if(Busca(pk, tabela) == -1){
+		printf(REGISTRO_N_ENCONTRADO);
+		return 0;
+	}
+
+	int Posicao = hash(pk, tabela->tam);
+
+	Chave *Anterior = NULL;
+	Chave *Node = tabela->v[Posicao];
+
+	if(strcmp(Node->pk, pk)==0){
+		//Primeiro, mas não ÚNICO, elemento da lista
+		if(Node->prox != NULL){
+			tabela->v[Posicao] = tabela->v[Posicao]->prox;
+			free(Node);
+			return 1;
+		}
+		else{
+			// Primeiro e ÚNICO elemento da lista
+			tabela->v[Posicao] = NULL;
+			free(Node);
+			return 1;
+		}
+	}
+
+	Anterior = Node;
+	Node = Node->prox;
+
+	while(Node != NULL){
+		if(strcmp(Node->pk, pk)==0){
+			Anterior->prox = Node->prox;
+			return 1;
+		}
+		Anterior = Node;
+		Node = Node->prox;
+	}
+	printf(REGISTRO_N_ENCONTRADO);
+	return 0;
+
+}
+
+
 void liberar_tabela(Hashtable* tabela){
+
+	Chave *Anterior;
+	Chave *Node;
+
+	for(int i=0; i<tabela->tam; i++){
+	
+		Node = tabela->v[i];
+
+		while (Node) {
+			Anterior = Node;
+			free(Node);
+			Node = Node->prox;
+		}
+
+
+	}
+
+	tabela->tam = 0;
+	free(tabela->v);
+
 
 
 }
